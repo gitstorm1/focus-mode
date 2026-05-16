@@ -7,9 +7,6 @@ const continueBtn = document.getElementById('continue-btn');
 
 let state = 'IDLE'; // States: IDLE, COUNTDOWN, PROMPT, STOPWATCH
 let intervalId = null;
-let timeRemaining = FOCUS_TIME_SECONDS;
-let stopwatchTime = FOCUS_TIME_SECONDS;
-
 // Register service worker for notification actions
 let swRegistration = null;
 if ('serviceWorker' in navigator) {
@@ -104,30 +101,40 @@ function sendNotification() {
 startBtn.addEventListener('click', () => {
     requestNotificationPermission();
     setUIState('COUNTDOWN');
-    timeRemaining = FOCUS_TIME_SECONDS;
-    updateDisplay(timeRemaining);
-
+    
+    const startTime = Date.now();
+    const durationMs = FOCUS_TIME_SECONDS * 1000;
+    
+    updateDisplay(FOCUS_TIME_SECONDS);
+    
     intervalId = setInterval(() => {
-        timeRemaining--;
-        updateDisplay(timeRemaining);
-
-        if (timeRemaining <= 0) {
+        const elapsedMs = Date.now() - startTime;
+        const remainingSeconds = Math.max(0, Math.ceil((durationMs - elapsedMs) / 1000));
+        
+        updateDisplay(remainingSeconds);
+        
+        if (remainingSeconds <= 0) {
             stopTimer();
             setUIState('PROMPT');
             sendNotification();
         }
-    }, 1000);
+    }, 100); // Update more frequently for a smoother display
 });
 
 continueBtn.addEventListener('click', () => {
     setUIState('STOPWATCH');
-    stopwatchTime = FOCUS_TIME_SECONDS; // Start the stopwatch from the initial focus time mark
-    updateDisplay(stopwatchTime);
-
+    
+    const startTime = Date.now();
+    const offsetMs = FOCUS_TIME_SECONDS * 1000; // Start counting up from the 5-minute mark
+    
+    updateDisplay(FOCUS_TIME_SECONDS);
+    
     intervalId = setInterval(() => {
-        stopwatchTime++;
-        updateDisplay(stopwatchTime);
-    }, 1000);
+        const elapsedMs = Date.now() - startTime;
+        const totalSeconds = Math.floor((offsetMs + elapsedMs) / 1000);
+        
+        updateDisplay(totalSeconds);
+    }, 100);
 });
 
 exitBtn.addEventListener('click', () => {
